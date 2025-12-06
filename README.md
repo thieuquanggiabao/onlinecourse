@@ -77,7 +77,7 @@ CREATE TABLE lessons (
     title VARCHAR(255) NOT NULL,
     content LONGTEXT,
     video_url VARCHAR(255) DEFAULT NULL,
-    order INT(5) NOT NULL, -- "order" là từ khóa trong SQL, nên đặt trong dấu ` ` hoặc đổi tên.
+    'order' INT(5) NOT NULL, -- "order" là từ khóa trong SQL, nên đặt trong dấu ` ` hoặc đổi tên.
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
