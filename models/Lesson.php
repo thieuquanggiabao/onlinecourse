@@ -7,7 +7,7 @@ class Lessons{
     private $video_url;
     private $order;
     private $created_at;
-
+    private $conn;
     public function HamTao($id, $course_id, $title, $content, $video_url, $order, $created_at){
         $this->id = $id;
         $this->course_id = $course_id;
@@ -17,7 +17,9 @@ class Lessons{
         $this->order = $order;
         $this->created_at = $created_at;
     }
-
+    public function __construct($db) {
+        $this->conn = $db;
+    }
     // id
     public function setID($id){
         $this->id = $id;
@@ -72,6 +74,22 @@ class Lessons{
     }
     public function getCreated_at(){
         return $this->created_at;
+    }
+    public function getAllByCourseId($course_id) {
+        // Lưu ý: `order` là từ khóa của SQL nên cần để trong dấu huyền ``
+        $query = "SELECT * FROM lessons 
+                  WHERE course_id = :course_id 
+                  ORDER BY `order` ASC";
+
+        $stmt = $this->conn->prepare($query);
+
+        // Làm sạch và gán tham số
+        $course_id = htmlspecialchars(strip_tags($course_id));
+        $stmt->bindParam(':course_id', $course_id);
+
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>

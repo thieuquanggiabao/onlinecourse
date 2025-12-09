@@ -1,12 +1,13 @@
 <?php
-class Material{
+class Materials{
     private $id;
     private $lesson_id;
     private $filename;
     private $file_path;
     private $file_type;
     private $uploaded_at;
-
+    private $conn;
+    private $table = 'materials';
     public function HamTao($id, $lesson_id, $filename, $file_path, $file_type, $uploaded_at){
         $this->id = $id;
         $this->lesson_id = $lesson_id;
@@ -15,7 +16,13 @@ class Material{
         $this->file_type = $file_type;
         $this->uploaded_at = $uploaded_at;
     }
-
+    public function getAllByLessonId($lesson_id) {
+        $query = "SELECT * FROM materials WHERE lesson_id = :lesson_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':lesson_id', $lesson_id);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     // id
     public function setID($id){
         $this->id = $id;
@@ -63,5 +70,6 @@ class Material{
     public function getUploaded_at(){
         return $this->uploaded_at;
     }
+
 }
 ?>

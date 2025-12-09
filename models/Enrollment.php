@@ -6,7 +6,8 @@ class Enrollments{
     private $enrolled_date;
     private $status;
     private $progress;
-
+    private $conn;
+    private $table = 'enrollments';
     public function HamTao($id, $course_id, $student_id, $enrolled_date, $status, $progress){
         $this->id = $id;
         $this->course_id = $course_id;
@@ -15,7 +16,9 @@ class Enrollments{
         $this->status = $status;
         $this->progress = $progress;
     }
-
+    public function __construct($db) {
+        $this->conn = $db;
+    }
     // id
     public function setID($id){
         $this->id = $id;
@@ -62,6 +65,44 @@ class Enrollments{
     }
     public function getProgress(){
         return $this->progress;
+    }
+    public function isEnrolled($course_id, $student_id) {
+        $query = "SELECT id FROM " . $this->table . " 
+                  WHERE course_id = :course_id AND student_id = :student_id 
+                  LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(':course_id', $course_id);
+        $stmt->bindParam(':student_id', $student_id);
+
+        $stmt->execute();
+
+        // Nếu rowCount > 0 nghĩa là tìm thấy bản ghi -> Đã đăng ký
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+        return false;
+    }
+    public function enrollStudent($course_id, $student_id) {
+        // Trước tiên kiểm tra xem đã đăng ký chưa để tránh trùng lặp
+        if ($this->isEnrolled($course_id, $student_id)) {
+            return false; 
+        }
+
+        $query = "INSERT INTO " . $this->table . " 
+                  (course_id, student_id, enrolled_date, status, progress) 
+                  VALUES (:course_id, :student_id, NOW(), 'active', 0)";
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(':course_id', $course_id);
+        $stmt->bindParam(':student_id', $student_id);
+
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
     }
 }
 ?>
