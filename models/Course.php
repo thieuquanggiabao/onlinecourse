@@ -140,37 +140,26 @@ class Courses{
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     public function searchCourses($keyword) {
-        // Query tìm kiếm có kết hợp (JOIN) để lấy thông tin chi tiết
+        // Tìm trong Title HOẶC Description
+        // Kết hợp bảng users và categories để lấy tên hiển thị đẹp
         $query = "SELECT 
-                    c.id, 
-                    c.title, 
-                    c.description, 
-                    c.price, 
-                    c.image, 
-                    c.created_at,
+                    c.id, c.title, c.description, c.price, c.image, c.created_at,
                     u.fullname as instructor_name, 
                     cat.name as category_name
-                  FROM 
-                    courses c
-                  LEFT JOIN 
-                    users u ON c.instructor_id = u.id
-                  LEFT JOIN 
-                    categories cat ON c.category_id = cat.id
-                  WHERE 
-                    c.title LIKE :keyword OR c.description LIKE :keyword
-                  ORDER BY 
-                    c.created_at DESC";
+                  FROM courses c
+                  LEFT JOIN users u ON c.instructor_id = u.id
+                  LEFT JOIN categories cat ON c.category_id = cat.id
+                  WHERE c.title LIKE :keyword OR c.description LIKE :keyword
+                  ORDER BY c.created_at DESC";
 
         $stmt = $this->conn->prepare($query);
-
-        // Thêm dấu % vào trước và sau từ khóa để tìm kiếm tương đối (LIKE %keyword%)
-        $keyword = "%{$keyword}%";
         
-        // Gán tham số. Lưu ý: ta dùng cùng một biến :keyword cho cả 2 chỗ (title và description)
-        $stmt->bindParam(':keyword', $keyword);
-
+        // Thêm dấu % để tìm kiếm chuỗi con
+        $searchTerm = "%" . $keyword . "%";
+        
+        $stmt->bindParam(':keyword', $searchTerm);
         $stmt->execute();
-
+        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     public function getFeaturedCourses($limit = 8) {
@@ -203,6 +192,31 @@ class Courses{
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function getById($id) {
+        $query = "SELECT 
+                    c.*, 
+                    u.fullname as instructor_name, 
+                    cat.name as category_name
+                  FROM 
+                    courses c
+                  LEFT JOIN 
+                    users u ON c.instructor_id = u.id
+                  LEFT JOIN 
+                    categories cat ON c.category_id = cat.id
+                  WHERE 
+                    c.id = :id
+                  LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+
+        // Gán tham số
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        $stmt->execute();
+
+        // Trả về một dòng duy nhất
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
 ?>

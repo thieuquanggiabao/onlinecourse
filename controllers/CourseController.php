@@ -30,7 +30,7 @@ class CourseController {
 
     // Trang chi tiết khóa học
     public function detail($id) {
-        $course = $this->courseModel->getId($id);
+        $course = $this->courseModel->getById($id);
         if (!$course) {
             $this->view('errors/404', ['pageTitle' => 'Không tìm thấy']);
             return;
@@ -49,16 +49,24 @@ class CourseController {
 
     // Trang tìm kiếm khóa học
     public function search() {
-        $keyword = filter_input(INPUT_GET, 'q', FILTER_SANITIZE_STRING);
+        // 1. Lấy từ khóa từ URL (phương thức GET)
+        // Dùng filter_input để an toàn hơn $_GET['q'] trực tiếp
+        $keyword = filter_input(INPUT_GET, 'q', FILTER_SANITIZE_SPECIAL_CHARS);
+        
         $courses = [];
+
+        // 2. Chỉ gọi Model nếu từ khóa không rỗng
         if (!empty($keyword)) {
+            // Trim để xóa khoảng trắng thừa đầu đuôi
+            $keyword = trim($keyword);
             $courses = $this->courseModel->searchCourses($keyword);
         }
-        
+
+        // 3. Gọi View search.php và truyền dữ liệu
         $this->view('courses/search', [
-            'keyword' => $keyword,
             'courses' => $courses,
-            'pageTitle' => 'Kết quả tìm kiếm'
+            'keyword' => $keyword, // Truyền lại từ khóa để hiển thị trong ô input
+            'pageTitle' => 'Tìm kiếm: ' . $keyword
         ]);
     }
     
