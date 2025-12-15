@@ -9,18 +9,25 @@ class AuthController {
     public function __construct() {
         $database = new Database();
         $this->db = $database->connect();
+        
+        // SỬA 1: Đảm bảo tên class là 'User' (khớp với file models/User.php)
         $this->userModel = new Users($this->db);
     }
 
     // Hiển thị form Đăng nhập
     public function login() {
+        // Kiểm tra nếu đã đăng nhập thì đá về trang chủ/dashboard
+        if (isset($_SESSION['user_id'])) {
+            $this->redirectUser($_SESSION['role']);
+        }
         $this->view('auth/login', ['pageTitle' => 'Đăng nhập']);
     }
 
     // Xử lý POST Đăng nhập
     public function authenticate() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /login');
+            // SỬA 2: Chuyển hướng về đúng router
+            header('Location: index.php?controller=auth&action=login');
             return;
         }
 
@@ -31,23 +38,20 @@ class AuthController {
         $user = $this->userModel->getUserByEmail($email);
 
         // Kiểm tra người dùng và mật khẩu
-        if ($user && password_verify($password, $user['password'])) {
+        if ($user && $password == $user['password']) {
             // Đăng nhập thành công: Lưu thông tin vào session
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['fullname'] = $user['fullname'];
+            $_SESSION['email'] = $user['email'];
 
-            // Chuyển hướng theo vai trò
-            if ($user['role'] == 2) { // Admin
-                header('Location: /admin/dashboard');
-            } elseif ($user['role'] == 1) { // Giảng viên
-                header('Location: /instructor/dashboard');
-            } else { // Học viên (hoặc mặc định)
-                header('Location: /student/dashboard');
-            }
+            // SỬA 3: Gọi hàm chuyển hướng chuẩn
+            $this->redirectUser($user['role']);
+            
         } else {
-            $_SESSION['error'] = 'Email hoặc mật khẩu không chính xác.';
-            header('Location: /login');
+            // Đăng nhập thất bại
+            // SỬA 4: Truyền tham số error để View hiển thị thông báo
+            header('Location: index.php?controller=auth&action=login&error=failed');
         }
     }
 
@@ -59,28 +63,28 @@ class AuthController {
     // Xử lý POST Đăng ký
     public function store() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /register');
+            header('Location: index.php?controller=auth&action=register');
             return;
         }
         
-        // Lấy dữ liệu và Validation cơ bản
+        // Lấy dữ liệu
         $data = [
             'username' => trim($_POST['username']),
             'email' => filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL),
             'password' => $_POST['password'],
             'fullname' => trim($_POST['fullname']),
-            'role' => (isset($_POST['is_instructor']) ? 1 : 0) // Giả định có checkbox 'Đăng ký làm Giảng viên'
+            'role' => 0 // Mặc định là Học viên. Nếu muốn test Giảng viên thì sửa thành 1
         ];
 
-        // Mã hóa mật khẩu trước khi lưu
-        $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        
+        
 
         if ($this->userModel->create($data)) {
-            $_SESSION['success'] = 'Đăng ký thành công! Vui lòng đăng nhập.';
-            header('Location: /login');
+            // SỬA 5: Chuyển hướng kèm thông báo success
+            header('Location: index.php?controller=auth&action=login&status=success');
         } else {
-            $_SESSION['error'] = 'Đăng ký thất bại. Tên người dùng hoặc Email có thể đã tồn tại.';
-            header('Location: /register');
+            // SỬA 6: Chuyển hướng kèm thông báo lỗi
+            header('Location: index.php?controller=auth&action=register&error=exists');
         }
     }
 
@@ -88,7 +92,20 @@ class AuthController {
     public function logout() {
         session_unset();
         session_destroy();
-        header('Location: /');
+        // SỬA 7: Về trang chủ đúng cách
+        header('Location: index.php');
+    }
+
+    // Hàm phụ: Chuyển hướng người dùng dựa theo Role
+    private function redirectUser($role) {
+        if ($role == 2) { // Admin
+            header('Location: index.php?controller=admin&action=dashboard');
+        } elseif ($role == 1) { // Giảng viên
+            header('Location: index.php?controller=instructor&action=dashboard');
+        } else { // Học viên
+            header('Location: index.php'); // Hoặc index.php?controller=student&action=dashboard
+        }
+        exit();
     }
 
     private function view($view, $data = []) {

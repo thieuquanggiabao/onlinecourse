@@ -168,5 +168,34 @@ class InstructorController {
             die("View '$viewPath' not found!");
         }
     }
+    // --- DASHBOARD (TRANG CHỦ GIẢNG VIÊN) ---
+    public function dashboard() {
+        $instructorId = $_SESSION['user_id'];
+        
+        // 1. Lấy danh sách khóa học để thống kê
+        $courses = $this->courseModel->getCoursesByInstructorId($instructorId);
+        
+        // 2. Tính toán số liệu (Logic đơn giản)
+        $totalCourses = count($courses);
+        $totalStudents = 0; // Sau này sẽ query từ bảng enrollments
+        $totalRevenue = 0; 
+        
+        // Giả lập tính toán doanh thu từ số lượng học viên (Demo logic)
+        // Thực tế bạn cần query COUNT(enrollments) WHERE course_id IN (...)
+        foreach ($courses as $c) {
+            $fakeEnrollment = rand(0, 50); // Giả vờ mỗi khóa có 0-50 học viên
+            $totalStudents += $fakeEnrollment;
+            $totalRevenue += ($c['price'] * $fakeEnrollment);
+        }
+
+        // 3. Gọi View Dashboard
+        $this->view('instructor/dashboard', [
+            'courses' => $courses, // Truyền danh sách để hiện ở bảng "Khóa học mới nhất"
+            'totalCourses' => $totalCourses,
+            'totalStudents' => $totalStudents,
+            'totalRevenue' => $totalRevenue,
+            'pageTitle' => 'Dashboard Tổng quan'
+        ]);
+    }
 }
 ?>

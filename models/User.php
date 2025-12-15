@@ -134,12 +134,19 @@ class Users{
         $stmt->bindParam(':role', $data['role']);
         
         // Thực thi
-        if ($stmt->execute()) {
-            return true;
+        try {
+            if ($stmt->execute()) {
+                return true; // Thành công
+            }
+        } catch (PDOException $e) {
+            // Mã lỗi 23000 là lỗi vi phạm ràng buộc (trùng lặp username/email)
+            if ($e->getCode() == 23000) {
+                return false; // Trả về false để Controller biết là đăng ký thất bại
+            }
+            // Nếu là lỗi khác thì vẫn báo lỗi ra để biết đường sửa
+            echo "Lỗi hệ thống: " . $e->getMessage();
         }
         
-        // Nếu có lỗi (ví dụ trùng email/username), có thể log lỗi ra
-        // printf("Error: %s.\n", $stmt->error);
         return false;
     }
 }
